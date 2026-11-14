@@ -1,0 +1,50 @@
+# =====================================================================
+# Legal Document Summarization Configuration
+# =====================================================================
+
+project:
+  name: "Legal_Document_Summarization"
+  version: "1.0.0"
+  random_seed: 42
+
+paths:
+  raw_data_dir: "./data/raw"
+  processed_data_dir: "./data/processed"
+  cuad_json_path: "./data/raw/CUADv1.json"
+  output_figures_dir: "./deliverables/figures"
+  model_checkpoint_dir: "./models/checkpoints"
+
+eda:
+  sample_size: null  # Set integer to subsample, or null for all contracts
+  token_length_percentiles: [50, 75, 90, 95, 99]
+
+preprocessing:
+  tokenizer_name: "facebook/bart-large-cnn"
+  max_model_context_length: 1024
+  chunk_size: 800       # Safe window size below 1024 token limit
+  chunk_overlap: 128    # Overlap to prevent boundary-context loss
+
+model:
+  max_summary_length: 256
+  min_summary_length: 64
+
+clause_taxonomies:
+  - "Non-Disclosure / Confidentiality"
+  - "Indemnification"
+  - "Governing Law"
+  - "Termination / Expiration"
+  - "Limitation of Liability"
+  - "Intellectual Property Ownership"
+
+hyperparameters:
+  train_split: 0.80
+  val_split: 0.10
+  test_split: 0.10
+  batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 3e-5
+  weight_decay: 0.01
+  num_epochs: 3
+  warmup_ratio: 0.1
+  beam_search_width: 4
+  length_penalty: 2.0
