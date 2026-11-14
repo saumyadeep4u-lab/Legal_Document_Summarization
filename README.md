@@ -14,6 +14,8 @@ Built to handle the unique formatting quirks of legal texts (e.g., ALL CAPS titl
 * **Uncapped Clause Preservation:** Dynamically captures massive 50+ word restrictive covenants and liability clauses without chopping off critical legal caveats.
 * **Master Report Generation:** Compiles all processed session data into a beautifully formatted, colorful, and exportable `.HTML` master report.
 
+🌐 **Live Demo:** (https://legaldocumentsummarization.streamlit.app/)
+
 ## 🗂️ Project Structure
 This repository is organized to separate model fine-tuning, source code, testing, and deployment:
 
