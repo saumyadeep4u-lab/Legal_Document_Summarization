@@ -3,15 +3,10 @@ import time
 import re
 import nltk
 import spacy
-from spacy.cli import download as spacy_download
 
 # Download required NLTK resources
 nltk.download('punkt', quiet=True)
 nltk.download('punkt_tab', quiet=True)
-
-# Ensure spaCy English model is installed on Streamlit Cloud
-if not spacy.util.is_package("en_core_web_sm"):
-    spacy_download("en_core_web_sm")
 
 from src.summarizer import LegalSummarizer
 
@@ -43,7 +38,7 @@ def sanitize_text(text: str) -> str:
         text = text.replace(orig, repl)
     text = re.sub(r'[\(\[]\s*\*+[\*\s]*[\)\]]', ' [REDACTED] ', text)
     
-    # NEW FIX: If there is a paragraph break without punctuation (like a title), add a period so it splits cleanly
+    # If there is a paragraph break without punctuation (like a title), add a period so it splits cleanly
     text = re.sub(r'(?<![.\!?:;])(\n\s*){2,}', '. ', text)
     
     # Now flatten the remaining whitespace
@@ -61,7 +56,7 @@ def clean_and_deduplicate(sentences):
         if len(normalized) < 20:
             continue
             
-        # NEW FIX: Skip short section headers (must be at least 8 words)
+        # Skip short section headers (must be at least 8 words)
         if len(clean_sent.split()) < 8:
             continue
             
@@ -99,7 +94,7 @@ def detect_document_title(text: str) -> str:
 def detect_legal_focus(text: str) -> str:
     text_lower = text.lower()
     
-    # Smarter Auto-Detect keywords to prevent false positives and catch NDAs & Employment docs
+    # Auto-Detect keywords to catch NDAs & Employment docs
     if "limitation of liability" in text_lower or "cap on liability" in text_lower or "consequential damages" in text_lower:
         return "CAP ON LIABILITY"
     elif "non-disclosure" in text_lower or "confidentiality" in text_lower or "trade secret" in text_lower:
