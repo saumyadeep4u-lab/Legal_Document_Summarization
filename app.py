@@ -2,10 +2,16 @@ import streamlit as st
 import time
 import re
 import nltk
+import spacy
+from spacy.cli import download as spacy_download
 
 # Download required NLTK resources
 nltk.download('punkt', quiet=True)
 nltk.download('punkt_tab', quiet=True)
+
+# Ensure spaCy English model is installed on Streamlit Cloud
+if not spacy.util.is_package("en_core_web_sm"):
+    spacy_download("en_core_web_sm")
 
 from src.summarizer import LegalSummarizer
 
