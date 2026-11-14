@@ -1,8 +1,6 @@
 """
 src/summarizer.py
 Core AI inference module. Uses facebook/bart-large-cnn.
-Reverted to PURE LASER-FOCUS (no intro sentences) for 100% precision,
-while keeping advanced grammatical generation parameters.
 """
 
 import logging
@@ -11,7 +9,6 @@ import yaml
 import nltk
 import re  
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-from src.preprocessor import LegalPreprocessor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -27,7 +24,28 @@ class LegalSummarizer:
         
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(self.device)
-        self.preprocessor = LegalPreprocessor(config_path)
+
+    def chunk_document(self, text: str) -> list:
+        """Splits document into token-safe chunks using the BART tokenizer."""
+        if not text or not text.strip():
+            return [""]
+        chunk_size = self.config.get("preprocessing", {}).get("chunk_size", 800)
+        chunk_overlap = self.config.get("preprocessing", {}).get("chunk_overlap", 128)
+        
+        tokens = self.tokenizer.encode(text, add_special_tokens=False, truncation=False)
+        if len(tokens) <= chunk_size:
+            return [text]
+            
+        chunks = []
+        step = max(1, chunk_size - chunk_overlap)
+        for i in range(0, len(tokens), step):
+            chunk_tokens = tokens[i : i + chunk_size]
+            chunk_text = self.tokenizer.decode(chunk_tokens, skip_special_tokens=True)
+            if chunk_text.strip():
+                chunks.append(chunk_text.strip())
+            if i + chunk_size >= len(tokens):
+                break
+        return chunks if chunks else [text]
 
     def extract_focused_clauses(self, full_text: str, focus_tag: str) -> str:
         if not focus_tag or focus_tag == "Auto-Detect" or focus_tag == "General Legal Terms":
@@ -59,13 +77,12 @@ class LegalSummarizer:
             if key in tag_lower:
                 search_keywords.extend(synonyms)
         if not search_keywords:
-             search_keywords = [word for word in tag_lower.split() if len(word) > 3]
+            search_keywords = [word for word in tag_lower.split() if len(word) > 3]
                 
-        # 🚨 THE FIX: No intro sentences. 
         relevant_indices = set()
         found_match = False
         
-        # 🚨 THE FIX: Strict 5-sentence window around the target ONLY.
+        # Strict 5-sentence window around the target ONLY
         for i, sentence in enumerate(sentences):
             sent_lower = sentence.lower()
             if any(re.search(rf"\b{re.escape(kw)}\b", sent_lower) for kw in search_keywords):
@@ -101,7 +118,7 @@ class LegalSummarizer:
     def summarize_document(self, full_text: str, focus_tag: str = None) -> str:
         logger.info(f"Applying extractive filter for tag: {focus_tag}")
         targeted_text = self.extract_focused_clauses(full_text, focus_tag)
-        chunks = self.preprocessor.chunk_document(targeted_text)
+        chunks = self.chunk_document(targeted_text)
         
         chunk_summaries = []
         for i, chunk in enumerate(chunks):
