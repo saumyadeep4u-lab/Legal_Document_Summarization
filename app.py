@@ -2,7 +2,6 @@ import streamlit as st
 import time
 import re
 import nltk
-import spacy
 
 # Download required NLTK resources
 nltk.download('punkt', quiet=True)
